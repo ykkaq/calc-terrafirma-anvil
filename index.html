@@ -31,18 +31,18 @@
 
           <div class="range-wrap anvil-gauge" aria-label="進捗バー">
             <div class="range-labels">
-              <span>0</span>
-              <span>20</span>
-              <span>40</span>
-              <span>60</span>
-              <span>80</span>
-              <span>100</span>
-              <span>120</span>
-              <span>140</span>
+              <span style="--pos: 0%">0</span>
+              <span style="--pos: 13.3333%">20</span>
+              <span style="--pos: 26.6667%">40</span>
+              <span style="--pos: 40%">60</span>
+              <span style="--pos: 53.3333%">80</span>
+              <span style="--pos: 66.6667%">100</span>
+              <span style="--pos: 80%">120</span>
+              <span style="--pos: 93.3333%">140</span>
             </div>
-            <div class="range-track">
-              <div id="current-marker" class="marker current" title="現在値"></div>
-              <div id="target-marker" class="marker target" title="目標値"></div>
+            <div class="range-track" role="group" aria-label="現在値と目標値">
+              <div id="current-marker" class="marker current" title="現在値" role="slider" aria-label="現在値" aria-valuemin="0" aria-valuemax="150" tabindex="0"></div>
+              <div id="target-marker" class="marker target" title="目標値" role="slider" aria-label="目標値" aria-valuemin="0" aria-valuemax="150" tabindex="0"></div>
             </div>
           </div>
 

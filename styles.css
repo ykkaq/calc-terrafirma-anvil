@@ -151,6 +151,21 @@ select {
   border-left-color: #2f2f2f;
   background: var(--bar-stripes);
   box-shadow: inset 0 8px 0 rgba(255, 255, 255, 0.36);
+  cursor: crosshair;
+  touch-action: none;
+  user-select: none;
+}
+
+.range-track::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -9px;
+  height: 17px;
+  background: var(--major-ticks);
+  pointer-events: none;
+  z-index: 2;
 }
 
 .range-track::after {
@@ -172,7 +187,14 @@ select {
   border-radius: 0;
   border: 0;
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(0, 0, 0, 0.45);
+  cursor: ew-resize;
   z-index: 3;
+}
+
+.marker:focus-visible,
+.marker.active {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
 }
 
 .marker.current {
@@ -184,13 +206,23 @@ select {
 }
 
 .range-labels {
-  display: flex;
-  justify-content: space-between;
+  position: relative;
+  height: 1.55rem;
   color: #4b4d50;
   font-size: 1.32rem;
   font-weight: 900;
   margin-bottom: 6px;
-  padding: 0 3px;
+}
+
+.range-labels span {
+  position: absolute;
+  left: var(--pos);
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.range-labels span:first-child {
+  transform: none;
 }
 
 fieldset {

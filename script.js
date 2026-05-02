@@ -26,6 +26,7 @@ const stepCountEl = document.querySelector("#step-count");
 const currentMarker = document.querySelector("#current-marker");
 const targetMarker = document.querySelector("#target-marker");
 const rangeTrack = document.querySelector(".range-track");
+let activeRangeInput = null;
 
 function makeOption([value, label]) {
   const option = document.createElement("option");
@@ -40,6 +41,7 @@ function moveOptions() {
 
 function initRangeTrack() {
   const stops = [];
+  const majorTicks = [];
 
   for (let value = BAR_MIN; value < BAR_MAX; value += 1) {
     const start = (value / BAR_MAX) * 100;
@@ -48,7 +50,14 @@ function initRangeTrack() {
     stops.push(`${color} ${start}% ${end}%`);
   }
 
+  for (let value = 20; value < BAR_MAX; value += 20) {
+    const start = (value / BAR_MAX) * 100;
+    const end = ((value + 1) / BAR_MAX) * 100;
+    majorTicks.push(`linear-gradient(90deg, transparent ${start}%, #2f2f2f ${start}% ${end}%, transparent ${end}%)`);
+  }
+
   rangeTrack.style.setProperty("--bar-stripes", `linear-gradient(90deg, ${stops.join(", ")})`);
+  rangeTrack.style.setProperty("--major-ticks", majorTicks.join(", "));
 }
 
 function initRules() {
@@ -86,6 +95,43 @@ function updateMarkers() {
   const target = clampBarValue(targetInput.value);
   currentMarker.style.left = `${(Math.min(current, BAR_MAX - 1) / BAR_MAX) * 100}%`;
   targetMarker.style.left = `${(Math.min(target, BAR_MAX - 1) / BAR_MAX) * 100}%`;
+  currentMarker.setAttribute("aria-valuenow", current);
+  targetMarker.setAttribute("aria-valuenow", target);
+}
+
+function valueFromPointer(event) {
+  const rect = rangeTrack.getBoundingClientRect();
+  const ratio = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+  return Math.round(BAR_MIN + ratio * (BAR_MAX - BAR_MIN));
+}
+
+function nearestRangeInput(value) {
+  const current = clampBarValue(currentInput.value);
+  const target = clampBarValue(targetInput.value);
+  return Math.abs(value - current) <= Math.abs(value - target) ? currentInput : targetInput;
+}
+
+function markerForInput(input) {
+  return input === currentInput ? currentMarker : targetMarker;
+}
+
+function setActiveRangeInput(input) {
+  [currentMarker, targetMarker].forEach((marker) => marker.classList.remove("active"));
+  activeRangeInput = input;
+  markerForInput(input).classList.add("active");
+}
+
+function updateActiveRangeValue(value) {
+  if (!activeRangeInput) return;
+  activeRangeInput.value = clampBarValue(value);
+  calculate();
+}
+
+function beginRangeDrag(event, input) {
+  event.preventDefault();
+  setActiveRangeInput(input);
+  rangeTrack.setPointerCapture(event.pointerId);
+  updateActiveRangeValue(valueFromPointer(event));
 }
 
 function readRules() {
@@ -203,10 +249,62 @@ form.addEventListener("submit", (event) => {
 });
 
 [currentInput, targetInput].forEach((input) => {
-  input.addEventListener("input", updateMarkers);
+  input.addEventListener("input", calculate);
 });
 
 rulesEl.addEventListener("change", calculate);
+
+currentMarker.addEventListener("pointerdown", (event) => {
+  event.stopPropagation();
+  beginRangeDrag(event, currentInput);
+});
+
+targetMarker.addEventListener("pointerdown", (event) => {
+  event.stopPropagation();
+  beginRangeDrag(event, targetInput);
+});
+
+rangeTrack.addEventListener("pointerdown", (event) => {
+  const value = valueFromPointer(event);
+  beginRangeDrag(event, nearestRangeInput(value));
+});
+
+rangeTrack.addEventListener("pointermove", (event) => {
+  if (!activeRangeInput || !rangeTrack.hasPointerCapture(event.pointerId)) return;
+  updateActiveRangeValue(valueFromPointer(event));
+});
+
+rangeTrack.addEventListener("pointerup", (event) => {
+  if (rangeTrack.hasPointerCapture(event.pointerId)) {
+    rangeTrack.releasePointerCapture(event.pointerId);
+  }
+  [currentMarker, targetMarker].forEach((marker) => marker.classList.remove("active"));
+  activeRangeInput = null;
+});
+
+rangeTrack.addEventListener("pointercancel", () => {
+  [currentMarker, targetMarker].forEach((marker) => marker.classList.remove("active"));
+  activeRangeInput = null;
+});
+
+[currentMarker, targetMarker].forEach((marker) => {
+  marker.addEventListener("keydown", (event) => {
+    const input = marker === currentMarker ? currentInput : targetInput;
+    const currentValue = clampBarValue(input.value);
+    const step = event.shiftKey ? 10 : 1;
+    let nextValue = currentValue;
+
+    if (event.key === "ArrowLeft" || event.key === "ArrowDown") nextValue -= step;
+    if (event.key === "ArrowRight" || event.key === "ArrowUp") nextValue += step;
+    if (event.key === "Home") nextValue = BAR_MIN;
+    if (event.key === "End") nextValue = BAR_MAX;
+    if (nextValue === currentValue) return;
+
+    event.preventDefault();
+    input.value = clampBarValue(nextValue);
+    calculate();
+  });
+});
 
 initRules();
 initRangeTrack();

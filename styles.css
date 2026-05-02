@@ -391,6 +391,13 @@ button.secondary {
   font-weight: 800;
 }
 
+.step-image {
+  width: 24px;
+  height: 24px;
+  vertical-align: middle;
+  margin-right: 4px;
+}
+
 .sequence li.positive {
   border-left-color: var(--green);
 }

@@ -1,0 +1,3 @@
+[tools]
+opencode = "latest"
+python = "3.12"

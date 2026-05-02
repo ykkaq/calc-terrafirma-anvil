@@ -210,11 +210,30 @@ function renderResult(path, current, target, rules) {
   }
 
   let position = current;
-  path.forEach((move, index) => {
+
+  // 連続する同じ操作をまとめる
+  const grouped = [];
+  for (const move of path) {
     position += move.delta;
+    const last = grouped[grouped.length - 1];
+    if (last && last.move.id === move.id) {
+      last.count += 1;
+      last.finalPosition = position;
+    } else {
+      grouped.push({ move, count: 1, finalPosition: position });
+    }
+  }
+
+  // 表示を生成
+  let displayPosition = current;
+  grouped.forEach(({ move, count }) => {
     const item = document.createElement("li");
     item.className = move.delta > 0 ? "positive" : "negative";
-    item.innerHTML = `<span>${index + 1}. ${move.label}</span><span class="delta">${formatDelta(move.delta)} / ${position}</span>`;
+    const sign = move.delta > 0 ? "+" : "";
+    const imgSrc = `images/${sign}${move.delta}.png`;
+    const label = count > 1 ? `${move.label} ×${count}` : move.label;
+    const deltaText = count > 1 ? `${formatDelta(move.delta)} ×${count} = ${formatDelta(move.delta * count)}` : formatDelta(move.delta);
+    item.innerHTML = `<span><img src="${imgSrc}" alt="${move.label}" class="step-image"> ${label}</span><span class="delta">${deltaText}</span>`;
     sequenceEl.append(item);
   });
 

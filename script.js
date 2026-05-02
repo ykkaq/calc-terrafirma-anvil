@@ -44,7 +44,7 @@ function initRangeTrack() {
   for (let value = BAR_MIN; value < BAR_MAX; value += 1) {
     const start = (value / BAR_MAX) * 100;
     const end = ((value + 1) / BAR_MAX) * 100;
-    const color = value % 2 === 0 ? "#858585" : "#a9a9a9";
+    const color = value % 10 === 0 ? "#2f2f2f" : value % 2 === 0 ? "#858585" : "#a9a9a9";
     stops.push(`${color} ${start}% ${end}%`);
   }
 
@@ -84,8 +84,8 @@ function clampBarValue(value) {
 function updateMarkers() {
   const current = clampBarValue(currentInput.value);
   const target = clampBarValue(targetInput.value);
-  currentMarker.style.left = `${(current / BAR_MAX) * 100}%`;
-  targetMarker.style.left = `${(target / BAR_MAX) * 100}%`;
+  currentMarker.style.left = `${(Math.min(current, BAR_MAX - 1) / BAR_MAX) * 100}%`;
+  targetMarker.style.left = `${(Math.min(target, BAR_MAX - 1) / BAR_MAX) * 100}%`;
 }
 
 function readRules() {

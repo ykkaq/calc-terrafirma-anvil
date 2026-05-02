@@ -12,16 +12,6 @@ const MOVES = [
   { id: "shrink", label: "縮める", short: "縮", type: "shrink", delta: 16, color: "red" }
 ];
 
-const TYPES = [
-  ["", "指定なし"],
-  ["hit", "叩く"],
-  ["draw", "引き延ばす"],
-  ["punch", "打ち抜く"],
-  ["bend", "曲げる"],
-  ["upset", "据え込む"],
-  ["shrink", "縮める"]
-];
-
 const RULE_ORDERS = ["last", "second_last", "third_last"];
 const RULE_LABELS = ["最後", "最後から2番目", "最後から3番目"];
 
@@ -45,6 +35,10 @@ function makeOption([value, label]) {
   return option;
 }
 
+function moveOptions() {
+  return [["", "指定なし"], ...MOVES.map((move) => [move.id, formatDelta(move.delta)])];
+}
+
 function initRules() {
   for (let i = 0; i < 3; i += 1) {
     const row = document.createElement("div");
@@ -58,7 +52,7 @@ function initRules() {
     const type = document.createElement("select");
     type.className = "rule-type";
     type.setAttribute("aria-label", `${RULE_LABELS[i]}の操作`);
-    TYPES.forEach((item) => type.append(makeOption(item)));
+    moveOptions().forEach((item) => type.append(makeOption(item)));
 
     row.append(label, type);
     rulesEl.append(row);
@@ -76,11 +70,9 @@ function moveById(id) {
 function initMoveControls() {
   MOVES.forEach((move) => {
     const label = document.createElement("label");
-    label.className = `op-cell ${move.color}`;
+    label.className = `op-cell ${move.color} move-${move.id}`;
     label.innerHTML = `
-      <span class="op-symbol">${move.short}</span>
-      <span class="op-name">${move.label}</span>
-      <input class="move-delta" data-move-id="${move.id}" type="number" step="1" list="delta-values" value="${move.delta}" aria-label="${move.label}の操作量">
+      <input class="move-delta" data-move-id="${move.id}" type="number" step="1" list="delta-values" value="${move.delta}" aria-label="${move.label}の操作量" title="${move.label}">
     `;
     moveControlsEl.append(label);
   });
@@ -89,17 +81,31 @@ function initMoveControls() {
 function initMoves() {
   MOVES.forEach((move) => {
     const card = document.createElement("div");
-    card.className = "move-card";
+    card.className = `move-card ${move.color} move-${move.id}`;
     card.dataset.moveId = move.id;
-    card.innerHTML = `<strong>${move.label}</strong><span>${formatDelta(move.delta)}</span>`;
+    card.title = move.label;
+    card.setAttribute("aria-label", `${move.label}: ${formatDelta(move.delta)}`);
+    card.innerHTML = `<span class="move-card-value">${formatDelta(move.delta)}</span>`;
     movesEl.append(card);
   });
 }
 
 function updateMoveReference() {
   MOVES.forEach((move) => {
-    const deltaEl = movesEl.querySelector(`[data-move-id="${move.id}"] span`);
+    const card = movesEl.querySelector(`[data-move-id="${move.id}"]`);
+    const deltaEl = card?.querySelector(".move-card-value");
     if (deltaEl) deltaEl.textContent = formatDelta(move.delta);
+    if (card) card.setAttribute("aria-label", `${move.label}: ${formatDelta(move.delta)}`);
+  });
+}
+
+function updateRuleOptions() {
+  const selected = [...rulesEl.querySelectorAll(".rule-type")].map((select) => select.value);
+
+  rulesEl.querySelectorAll(".rule-type").forEach((select, index) => {
+    select.replaceChildren();
+    moveOptions().forEach((item) => select.append(makeOption(item)));
+    select.value = selected[index] || "";
   });
 }
 
@@ -119,14 +125,14 @@ function updateMarkers() {
 function readRules() {
   return [...rulesEl.querySelectorAll(".rule-row")]
     .map((row) => ({
-      type: row.querySelector(".rule-type").value,
+      moveId: row.querySelector(".rule-type").value,
       order: row.dataset.order
     }))
-    .filter((rule) => rule.type);
+    .filter((rule) => rule.moveId);
 }
 
-function actionMatches(action, type) {
-  return action && action.type === type;
+function actionMatches(action, moveId) {
+  return action && action.id === moveId;
 }
 
 function ruleSatisfied(rule, recent) {
@@ -134,13 +140,10 @@ function ruleSatisfied(rule, recent) {
   const second = recent[recent.length - 2];
   const third = recent[recent.length - 3];
 
-  if (rule.order === "last") return actionMatches(last, rule.type);
-  if (rule.order === "second_last") return actionMatches(second, rule.type);
-  if (rule.order === "third_last") return actionMatches(third, rule.type);
-  if (rule.order === "not_last") {
-    return actionMatches(second, rule.type) || actionMatches(third, rule.type);
-  }
-  return [last, second, third].some((action) => actionMatches(action, rule.type));
+  if (rule.order === "last") return actionMatches(last, rule.moveId);
+  if (rule.order === "second_last") return actionMatches(second, rule.moveId);
+  if (rule.order === "third_last") return actionMatches(third, rule.moveId);
+  return false;
 }
 
 function allRulesSatisfied(rules, recent) {
@@ -246,6 +249,7 @@ moveControlsEl.addEventListener("input", (event) => {
 
   move.delta = delta;
   updateMoveReference();
+  updateRuleOptions();
   calculate();
 });
 

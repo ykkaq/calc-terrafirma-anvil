@@ -25,6 +25,7 @@ const resultTitleEl = document.querySelector("#result-title");
 const stepCountEl = document.querySelector("#step-count");
 const currentMarker = document.querySelector("#current-marker");
 const targetMarker = document.querySelector("#target-marker");
+const rangeTrack = document.querySelector(".range-track");
 
 function makeOption([value, label]) {
   const option = document.createElement("option");
@@ -35,6 +36,19 @@ function makeOption([value, label]) {
 
 function moveOptions() {
   return [["", "指定なし"], ...MOVES.map((move) => [move.id, formatDelta(move.delta)])];
+}
+
+function initRangeTrack() {
+  const stops = [];
+
+  for (let value = BAR_MIN; value < BAR_MAX; value += 1) {
+    const start = (value / BAR_MAX) * 100;
+    const end = ((value + 1) / BAR_MAX) * 100;
+    const color = value % 2 === 0 ? "#858585" : "#a9a9a9";
+    stops.push(`${color} ${start}% ${end}%`);
+  }
+
+  rangeTrack.style.setProperty("--bar-stripes", `linear-gradient(90deg, ${stops.join(", ")})`);
 }
 
 function initRules() {
@@ -195,4 +209,5 @@ form.addEventListener("submit", (event) => {
 rulesEl.addEventListener("change", calculate);
 
 initRules();
+initRangeTrack();
 calculate();

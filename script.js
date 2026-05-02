@@ -25,8 +25,6 @@ const resultTitleEl = document.querySelector("#result-title");
 const stepCountEl = document.querySelector("#step-count");
 const currentMarker = document.querySelector("#current-marker");
 const targetMarker = document.querySelector("#target-marker");
-const movesEl = document.querySelector("#moves");
-const moveControlsEl = document.querySelector("#move-controls");
 
 function makeOption([value, label]) {
   const option = document.createElement("option");
@@ -61,52 +59,6 @@ function initRules() {
 
 function formatDelta(delta) {
   return `${delta > 0 ? "+" : ""}${delta}`;
-}
-
-function moveById(id) {
-  return MOVES.find((move) => move.id === id);
-}
-
-function initMoveControls() {
-  MOVES.forEach((move) => {
-    const label = document.createElement("label");
-    label.className = `op-cell ${move.color} move-${move.id}`;
-    label.innerHTML = `
-      <input class="move-delta" data-move-id="${move.id}" type="number" step="1" list="delta-values" value="${move.delta}" aria-label="${move.label}の操作量" title="${move.label}">
-    `;
-    moveControlsEl.append(label);
-  });
-}
-
-function initMoves() {
-  MOVES.forEach((move) => {
-    const card = document.createElement("div");
-    card.className = `move-card ${move.color} move-${move.id}`;
-    card.dataset.moveId = move.id;
-    card.title = move.label;
-    card.setAttribute("aria-label", `${move.label}: ${formatDelta(move.delta)}`);
-    card.innerHTML = `<span class="move-card-value">${formatDelta(move.delta)}</span>`;
-    movesEl.append(card);
-  });
-}
-
-function updateMoveReference() {
-  MOVES.forEach((move) => {
-    const card = movesEl.querySelector(`[data-move-id="${move.id}"]`);
-    const deltaEl = card?.querySelector(".move-card-value");
-    if (deltaEl) deltaEl.textContent = formatDelta(move.delta);
-    if (card) card.setAttribute("aria-label", `${move.label}: ${formatDelta(move.delta)}`);
-  });
-}
-
-function updateRuleOptions() {
-  const selected = [...rulesEl.querySelectorAll(".rule-type")].map((select) => select.value);
-
-  rulesEl.querySelectorAll(".rule-type").forEach((select, index) => {
-    select.replaceChildren();
-    moveOptions().forEach((item) => select.append(makeOption(item)));
-    select.value = selected[index] || "";
-  });
 }
 
 function clampBarValue(value) {
@@ -240,34 +192,7 @@ form.addEventListener("submit", (event) => {
   input.addEventListener("input", updateMarkers);
 });
 
-moveControlsEl.addEventListener("input", (event) => {
-  if (!event.target.classList.contains("move-delta")) return;
-
-  const move = moveById(event.target.dataset.moveId);
-  const delta = Number.parseInt(event.target.value, 10);
-  if (!move || Number.isNaN(delta) || delta === 0) return;
-
-  move.delta = delta;
-  updateMoveReference();
-  updateRuleOptions();
-  calculate();
-});
-
-moveControlsEl.addEventListener("change", (event) => {
-  if (!event.target.classList.contains("move-delta")) return;
-
-  const move = moveById(event.target.dataset.moveId);
-  const delta = Number.parseInt(event.target.value, 10);
-  if (!move) return;
-
-  if (Number.isNaN(delta) || delta === 0) {
-    event.target.value = move.delta;
-  }
-});
-
 rulesEl.addEventListener("change", calculate);
 
 initRules();
-initMoveControls();
-initMoves();
 calculate();

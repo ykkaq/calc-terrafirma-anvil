@@ -8,13 +8,6 @@
   </head>
   <body>
     <main class="app">
-      <header class="topbar">
-        <div>
-          <p class="eyebrow">TerraFirmaCraft</p>
-          <h1>金床加工 最小手順計算機</h1>
-        </div>
-      </header>
-
       <section class="workspace">
         <form id="calculator" class="anvil-window" autocomplete="off">
           <div class="anvil-title">Anvil</div>
@@ -29,8 +22,6 @@
               <span>現在値</span>
               <input id="current" type="number" min="0" max="150" step="1" value="0">
             </label>
-
-            <div id="move-controls" class="operation-pad" aria-label="加工操作"></div>
 
             <label class="item-slot target-slot">
               <span>目標値</span>
@@ -59,17 +50,6 @@
             <button type="button" id="clear-rules" class="secondary">ルールを消す</button>
             <button type="submit">計算</button>
           </div>
-
-          <datalist id="delta-values">
-            <option value="-15"></option>
-            <option value="-9"></option>
-            <option value="-6"></option>
-            <option value="-3"></option>
-            <option value="2"></option>
-            <option value="7"></option>
-            <option value="13"></option>
-            <option value="16"></option>
-          </datalist>
         </form>
 
         <section class="panel result-panel" aria-live="polite">
@@ -85,10 +65,6 @@
         </section>
       </section>
 
-      <section class="reference">
-        <h2>操作量</h2>
-        <div id="moves" class="move-grid"></div>
-      </section>
     </main>
 
     <script src="script.js"></script>

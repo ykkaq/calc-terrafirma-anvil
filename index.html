@@ -17,34 +17,53 @@
       </header>
 
       <section class="workspace">
-        <form id="calculator" class="panel" autocomplete="off">
-          <div class="field-row">
-            <label>
+        <form id="calculator" class="anvil-window" autocomplete="off">
+          <div class="anvil-title">Anvil</div>
+
+          <div class="anvil-rules">
+            <div class="rule-cap">Final rules</div>
+            <div id="rules" class="rules-grid"></div>
+          </div>
+
+          <div class="anvil-body">
+            <label class="item-slot">
               <span>現在値</span>
               <input id="current" type="number" min="0" max="150" step="1" value="0">
             </label>
-            <label>
+
+            <div class="operation-pad" aria-label="加工操作">
+              <div class="op-cell cyan">叩</div>
+              <div class="op-cell blue">叩</div>
+              <div class="op-cell green">延</div>
+              <div class="op-cell yellow">打</div>
+              <div class="op-cell navy">曲</div>
+              <div class="op-cell violet">縮</div>
+              <div class="op-cell tan">据</div>
+              <div class="op-cell red">終</div>
+            </div>
+
+            <label class="item-slot target-slot">
               <span>目標値</span>
               <input id="target" type="number" min="0" max="150" step="1" value="68">
             </label>
           </div>
 
-          <div class="range-wrap" aria-label="進捗バー">
+          <div class="range-wrap anvil-gauge" aria-label="進捗バー">
+            <div class="range-labels">
+              <span>0</span>
+              <span>20</span>
+              <span>40</span>
+              <span>60</span>
+              <span>80</span>
+              <span>100</span>
+              <span>120</span>
+              <span>140</span>
+            </div>
             <div class="range-track">
               <div id="current-marker" class="marker current" title="現在値"></div>
               <div id="target-marker" class="marker target" title="目標値"></div>
             </div>
-            <div class="range-labels">
-              <span>0</span>
-              <span>75</span>
-              <span>150</span>
-            </div>
           </div>
-
-          <fieldset>
-            <legend>最後のルール</legend>
-            <div id="rules" class="rules-grid"></div>
-          </fieldset>
 
           <div class="actions-row">
             <button type="button" id="clear-rules" class="secondary">ルールを消す</button>

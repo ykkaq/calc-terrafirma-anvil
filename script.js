@@ -2,14 +2,14 @@ const BAR_MIN = 0;
 const BAR_MAX = 150;
 
 const MOVES = [
-  { id: "light_hit", label: "軽く叩く", type: "hit", delta: -3 },
-  { id: "medium_hit", label: "普通に叩く", type: "hit", delta: -6 },
-  { id: "heavy_hit", label: "強く叩く", type: "hit", delta: -9 },
-  { id: "draw", label: "引き延ばす", type: "draw", delta: -15 },
-  { id: "punch", label: "打ち抜く", type: "punch", delta: 2 },
-  { id: "bend", label: "曲げる", type: "bend", delta: 7 },
-  { id: "upset", label: "据え込む", type: "upset", delta: 13 },
-  { id: "shrink", label: "縮める", type: "shrink", delta: 16 }
+  { id: "light_hit", label: "軽く叩く", short: "叩", type: "hit", delta: -3, color: "cyan" },
+  { id: "medium_hit", label: "普通に叩く", short: "叩", type: "hit", delta: -6, color: "blue" },
+  { id: "heavy_hit", label: "強く叩く", short: "叩", type: "hit", delta: -9, color: "navy" },
+  { id: "draw", label: "引き延ばす", short: "延", type: "draw", delta: -15, color: "green" },
+  { id: "punch", label: "打ち抜く", short: "打", type: "punch", delta: 2, color: "yellow" },
+  { id: "bend", label: "曲げる", short: "曲", type: "bend", delta: 7, color: "violet" },
+  { id: "upset", label: "据え込む", short: "据", type: "upset", delta: 13, color: "tan" },
+  { id: "shrink", label: "縮める", short: "縮", type: "shrink", delta: 16, color: "red" }
 ];
 
 const TYPES = [
@@ -22,13 +22,8 @@ const TYPES = [
   ["shrink", "縮める"]
 ];
 
-const ORDERS = [
-  ["any", "どこか"],
-  ["last", "最後"],
-  ["not_last", "最後以外"],
-  ["second_last", "最後から2番目"],
-  ["third_last", "最後から3番目"]
-];
+const RULE_ORDERS = ["last", "second_last", "third_last"];
+const RULE_LABELS = ["最後", "最後から2番目", "最後から3番目"];
 
 const form = document.querySelector("#calculator");
 const currentInput = document.querySelector("#current");
@@ -41,6 +36,7 @@ const stepCountEl = document.querySelector("#step-count");
 const currentMarker = document.querySelector("#current-marker");
 const targetMarker = document.querySelector("#target-marker");
 const movesEl = document.querySelector("#moves");
+const moveControlsEl = document.querySelector("#move-controls");
 
 function makeOption([value, label]) {
   const option = document.createElement("option");
@@ -53,28 +49,57 @@ function initRules() {
   for (let i = 0; i < 3; i += 1) {
     const row = document.createElement("div");
     row.className = "rule-row";
+    row.dataset.order = RULE_ORDERS[i];
+
+    const label = document.createElement("div");
+    label.className = "rule-slot-label";
+    label.textContent = RULE_LABELS[i];
 
     const type = document.createElement("select");
     type.className = "rule-type";
-    type.setAttribute("aria-label", `ルール${i + 1}の操作`);
+    type.setAttribute("aria-label", `${RULE_LABELS[i]}の操作`);
     TYPES.forEach((item) => type.append(makeOption(item)));
 
-    const order = document.createElement("select");
-    order.className = "rule-order";
-    order.setAttribute("aria-label", `ルール${i + 1}の位置`);
-    ORDERS.forEach((item) => order.append(makeOption(item)));
-
-    row.append(type, order);
+    row.append(label, type);
     rulesEl.append(row);
   }
+}
+
+function formatDelta(delta) {
+  return `${delta > 0 ? "+" : ""}${delta}`;
+}
+
+function moveById(id) {
+  return MOVES.find((move) => move.id === id);
+}
+
+function initMoveControls() {
+  MOVES.forEach((move) => {
+    const label = document.createElement("label");
+    label.className = `op-cell ${move.color}`;
+    label.innerHTML = `
+      <span class="op-symbol">${move.short}</span>
+      <span class="op-name">${move.label}</span>
+      <input class="move-delta" data-move-id="${move.id}" type="number" step="1" list="delta-values" value="${move.delta}" aria-label="${move.label}の操作量">
+    `;
+    moveControlsEl.append(label);
+  });
 }
 
 function initMoves() {
   MOVES.forEach((move) => {
     const card = document.createElement("div");
     card.className = "move-card";
-    card.innerHTML = `<strong>${move.label}</strong><span>${move.delta > 0 ? "+" : ""}${move.delta}</span>`;
+    card.dataset.moveId = move.id;
+    card.innerHTML = `<strong>${move.label}</strong><span>${formatDelta(move.delta)}</span>`;
     movesEl.append(card);
+  });
+}
+
+function updateMoveReference() {
+  MOVES.forEach((move) => {
+    const deltaEl = movesEl.querySelector(`[data-move-id="${move.id}"] span`);
+    if (deltaEl) deltaEl.textContent = formatDelta(move.delta);
   });
 }
 
@@ -95,7 +120,7 @@ function readRules() {
   return [...rulesEl.querySelectorAll(".rule-row")]
     .map((row) => ({
       type: row.querySelector(".rule-type").value,
-      order: row.querySelector(".rule-order").value
+      order: row.dataset.order
     }))
     .filter((rule) => rule.type);
 }
@@ -174,14 +199,14 @@ function renderResult(path, current, target, rules) {
     position += move.delta;
     const item = document.createElement("li");
     item.className = move.delta > 0 ? "positive" : "negative";
-    item.innerHTML = `<span>${index + 1}. ${move.label}</span><span class="delta">${move.delta > 0 ? "+" : ""}${move.delta} / ${position}</span>`;
+    item.innerHTML = `<span>${index + 1}. ${move.label}</span><span class="delta">${formatDelta(move.delta)} / ${position}</span>`;
     sequenceEl.append(item);
   });
 
   resultTitleEl.textContent = `${current} から ${target} へ`;
   stepCountEl.textContent = `${path.length} 手`;
   messageEl.textContent = rules.length
-    ? "表示された順に操作すると、最後の3手が指定ルールを満たします。"
+    ? "上部スロットに指定した最後の操作条件を満たす最短手順です。"
     : "ルール指定なしの最短手順です。";
 }
 
@@ -212,8 +237,33 @@ form.addEventListener("submit", (event) => {
   input.addEventListener("input", updateMarkers);
 });
 
+moveControlsEl.addEventListener("input", (event) => {
+  if (!event.target.classList.contains("move-delta")) return;
+
+  const move = moveById(event.target.dataset.moveId);
+  const delta = Number.parseInt(event.target.value, 10);
+  if (!move || Number.isNaN(delta) || delta === 0) return;
+
+  move.delta = delta;
+  updateMoveReference();
+  calculate();
+});
+
+moveControlsEl.addEventListener("change", (event) => {
+  if (!event.target.classList.contains("move-delta")) return;
+
+  const move = moveById(event.target.dataset.moveId);
+  const delta = Number.parseInt(event.target.value, 10);
+  if (!move) return;
+
+  if (Number.isNaN(delta) || delta === 0) {
+    event.target.value = move.delta;
+  }
+});
+
 rulesEl.addEventListener("change", calculate);
 
 initRules();
+initMoveControls();
 initMoves();
 calculate();

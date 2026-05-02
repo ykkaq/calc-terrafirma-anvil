@@ -31,16 +31,7 @@
               <input id="current" type="number" min="0" max="150" step="1" value="0">
             </label>
 
-            <div class="operation-pad" aria-label="加工操作">
-              <div class="op-cell cyan">叩</div>
-              <div class="op-cell blue">叩</div>
-              <div class="op-cell green">延</div>
-              <div class="op-cell yellow">打</div>
-              <div class="op-cell navy">曲</div>
-              <div class="op-cell violet">縮</div>
-              <div class="op-cell tan">据</div>
-              <div class="op-cell red">終</div>
-            </div>
+            <div id="move-controls" class="operation-pad" aria-label="加工操作"></div>
 
             <label class="item-slot target-slot">
               <span>目標値</span>
@@ -69,6 +60,17 @@
             <button type="button" id="clear-rules" class="secondary">ルールを消す</button>
             <button type="submit">計算</button>
           </div>
+
+          <datalist id="delta-values">
+            <option value="-15"></option>
+            <option value="-9"></option>
+            <option value="-6"></option>
+            <option value="-3"></option>
+            <option value="2"></option>
+            <option value="7"></option>
+            <option value="13"></option>
+            <option value="16"></option>
+          </datalist>
         </form>
 
         <section class="panel result-panel" aria-live="polite">

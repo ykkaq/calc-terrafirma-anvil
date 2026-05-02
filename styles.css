@@ -215,7 +215,8 @@ fieldset {
 .rule-row {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 6px;
+  align-content: end;
+  gap: 8px;
   position: relative;
   min-height: 94px;
   background: #343434;
@@ -236,6 +237,14 @@ fieldset {
   min-height: 34px;
   font-size: 0.78rem;
   padding: 4px 5px;
+}
+
+.rule-slot-label {
+  color: #f1f1f1;
+  font-size: 0.86rem;
+  font-weight: 900;
+  text-align: center;
+  text-shadow: 2px 2px 0 #111;
 }
 
 .anvil-body {
@@ -281,6 +290,7 @@ fieldset {
 
 .op-cell {
   display: grid;
+  grid-template-rows: 1fr auto auto;
   place-items: center;
   aspect-ratio: 1;
   min-width: 0;
@@ -292,6 +302,34 @@ fieldset {
   font-size: 1.2rem;
   font-weight: 900;
   text-shadow: 2px 2px 0 #222;
+  padding: 5px;
+  cursor: default;
+}
+
+.op-symbol {
+  font-size: 1.38rem;
+  line-height: 1;
+}
+
+.op-name {
+  max-width: 100%;
+  color: #fff;
+  font-size: 0.58rem;
+  line-height: 1.05;
+  text-align: center;
+  text-shadow: 1px 1px 0 #222;
+  overflow-wrap: anywhere;
+}
+
+.op-cell input {
+  min-height: 26px;
+  width: min(58px, 100%);
+  margin-top: 3px;
+  border-width: 2px;
+  padding: 1px 3px;
+  font-size: 0.78rem;
+  text-align: center;
+  box-shadow: none;
 }
 
 .op-cell.cyan {

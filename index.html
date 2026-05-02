@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>TFC Anvil Calculator</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="app">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">TerraFirmaCraft</p>
+          <h1>金床加工 最小手順計算機</h1>
+        </div>
+        <a class="github-link" href="https://github.com/" rel="noreferrer">GitHub Pages ready</a>
+      </header>
+
+      <section class="workspace">
+        <form id="calculator" class="panel" autocomplete="off">
+          <div class="field-row">
+            <label>
+              <span>現在値</span>
+              <input id="current" type="number" min="0" max="150" step="1" value="0">
+            </label>
+            <label>
+              <span>目標値</span>
+              <input id="target" type="number" min="0" max="150" step="1" value="68">
+            </label>
+          </div>
+
+          <div class="range-wrap" aria-label="進捗バー">
+            <div class="range-track">
+              <div id="current-marker" class="marker current" title="現在値"></div>
+              <div id="target-marker" class="marker target" title="目標値"></div>
+            </div>
+            <div class="range-labels">
+              <span>0</span>
+              <span>75</span>
+              <span>150</span>
+            </div>
+          </div>
+
+          <fieldset>
+            <legend>最後のルール</legend>
+            <div id="rules" class="rules-grid"></div>
+          </fieldset>
+
+          <div class="actions-row">
+            <button type="button" id="clear-rules" class="secondary">ルールを消す</button>
+            <button type="submit">計算</button>
+          </div>
+        </form>
+
+        <section class="panel result-panel" aria-live="polite">
+          <div class="result-head">
+            <div>
+              <p class="eyebrow">Result</p>
+              <h2 id="result-title">計算待ち</h2>
+            </div>
+            <div id="step-count" class="step-count">0 手</div>
+          </div>
+          <ol id="sequence" class="sequence"></ol>
+          <p id="message" class="message">現在値、目標値、最後に必要なルールを入れてください。</p>
+        </section>
+      </section>
+
+      <section class="reference">
+        <h2>操作量</h2>
+        <div id="moves" class="move-grid"></div>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>

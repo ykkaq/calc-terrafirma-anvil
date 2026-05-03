@@ -48,23 +48,23 @@
 
           <div class="actions-row">
             <button type="button" id="clear-rules" class="secondary">ルールを消す</button>
-            <button type="submit">計算</button>
           </div>
         </form>
 
-        <section class="panel result-panel" aria-live="polite">
-          <div class="result-head">
-            <div>
-              <p class="eyebrow">Result</p>
-              <h2 id="result-title">計算待ち</h2>
+        <div class="result-wrap">
+          <input id="screenshot-title" class="result-title-field" type="text" placeholder="文字列を入力">
+          <section class="panel result-panel" aria-live="polite">
+            <div class="result-head">
+              <div>
+                <p class="eyebrow">Result</p>
+                <h2 id="result-title">計算待ち</h2>
+              </div>
+              <div id="step-count" class="step-count">0 手</div>
             </div>
-            <div id="step-count" class="step-count">0 手</div>
-          </div>
-          <ol id="sequence" class="sequence"></ol>
-          <p id="message" class="message">現在値、目標値、最後に必要なルールを入れてください。</p>
-        </section>
+            <ol id="sequence" class="sequence"></ol>
+          </section>
+        </div>
       </section>
-
     </main>
 
     <script src="script.js"></script>

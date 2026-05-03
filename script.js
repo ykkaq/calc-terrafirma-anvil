@@ -1,5 +1,6 @@
 const BAR_MIN = 0;
 const BAR_MAX = 150;
+const CALC_MAX = 200;
 
 const MOVES = [
   { id: "light_hit", label: "軽く叩く", short: "叩", type: "hit", delta: -3, color: "cyan" },
@@ -20,24 +21,13 @@ const currentInput = document.querySelector("#current");
 const targetInput = document.querySelector("#target");
 const rulesEl = document.querySelector("#rules");
 const sequenceEl = document.querySelector("#sequence");
-const messageEl = document.querySelector("#message");
 const resultTitleEl = document.querySelector("#result-title");
 const stepCountEl = document.querySelector("#step-count");
 const currentMarker = document.querySelector("#current-marker");
 const targetMarker = document.querySelector("#target-marker");
 const rangeTrack = document.querySelector(".range-track");
 let activeRangeInput = null;
-
-function makeOption([value, label]) {
-  const option = document.createElement("option");
-  option.value = value;
-  option.textContent = label;
-  return option;
-}
-
-function moveOptions() {
-  return [["", "指定なし"], ...MOVES.map((move) => [move.id, formatDelta(move.delta)])];
-}
+let activeRuleRow = null;
 
 function initRangeTrack() {
   const stops = [];
@@ -62,22 +52,95 @@ function initRangeTrack() {
 
 function initRules() {
   for (let i = 0; i < 3; i += 1) {
-    const row = document.createElement("div");
+    const row = document.createElement("button");
+    row.type = "button";
     row.className = "rule-row";
     row.dataset.order = RULE_ORDERS[i];
+    row.dataset.moveId = "";
+    row.setAttribute("aria-label", `${RULE_LABELS[i]}の操作を選択`);
 
     const label = document.createElement("div");
     label.className = "rule-slot-label";
     label.textContent = RULE_LABELS[i];
 
-    const type = document.createElement("select");
-    type.className = "rule-type";
-    type.setAttribute("aria-label", `${RULE_LABELS[i]}の操作`);
-    moveOptions().forEach((item) => type.append(makeOption(item)));
+    const icon = document.createElement("div");
+    icon.className = "rule-slot-icon";
+    icon.textContent = "未";
 
-    row.append(label, type);
+    row.append(label, icon);
     rulesEl.append(row);
   }
+
+  setActiveRuleRow(rulesEl.querySelector(".rule-row"));
+  rulesEl.after(createRulePalette());
+}
+
+function createRulePalette() {
+  const palette = document.createElement("div");
+  palette.className = "rule-palette";
+  palette.setAttribute("aria-label", "操作アイコン");
+
+  MOVES.forEach((move) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "rule-palette-button";
+    button.dataset.moveId = move.id;
+    button.title = `${move.label} (${formatDelta(move.delta)})`;
+    button.setAttribute("aria-label", `${move.label} ${formatDelta(move.delta)} を設定`);
+
+    const image = document.createElement("img");
+    image.src = imageSrcForMove(move);
+    image.alt = "";
+    image.draggable = false;
+
+    const value = document.createElement("span");
+    value.textContent = formatDelta(move.delta);
+
+    button.append(image, value);
+    palette.append(button);
+  });
+
+  return palette;
+}
+
+function imageSrcForMove(move) {
+  return `images/${formatDelta(move.delta)}.png`;
+}
+
+function setActiveRuleRow(row) {
+  if (!row) return;
+  rulesEl.querySelectorAll(".rule-row").forEach((item) => item.classList.remove("active"));
+  activeRuleRow = row;
+  row.classList.add("active");
+}
+
+function setRuleMove(row, moveId) {
+  const move = MOVES.find((item) => item.id === moveId);
+  if (!move) return;
+
+  row.dataset.moveId = move.id;
+  row.setAttribute("aria-label", `${row.querySelector(".rule-slot-label").textContent}: ${move.label} ${formatDelta(move.delta)}`);
+
+  const icon = row.querySelector(".rule-slot-icon");
+  icon.replaceChildren();
+
+  const image = document.createElement("img");
+  image.src = imageSrcForMove(move);
+  image.alt = move.label;
+  image.draggable = false;
+
+  const value = document.createElement("span");
+  value.textContent = formatDelta(move.delta);
+
+  icon.append(image, value);
+  setActiveRuleRow(row.nextElementSibling || row);
+  calculate();
+}
+
+function clearRuleMove(row) {
+  row.dataset.moveId = "";
+  row.setAttribute("aria-label", `${row.querySelector(".rule-slot-label").textContent}の操作を選択`);
+  row.querySelector(".rule-slot-icon").textContent = "未";
 }
 
 function formatDelta(delta) {
@@ -137,7 +200,7 @@ function beginRangeDrag(event, input) {
 function readRules() {
   return [...rulesEl.querySelectorAll(".rule-row")]
     .map((row) => ({
-      moveId: row.querySelector(".rule-type").value,
+      moveId: row.dataset.moveId,
       order: row.dataset.order
     }))
     .filter((rule) => rule.moveId);
@@ -180,7 +243,7 @@ function findShortestPath(current, target, rules) {
 
     for (const move of MOVES) {
       const nextPosition = state.position + move.delta;
-      if (nextPosition < BAR_MIN || nextPosition > BAR_MAX) continue;
+      if (nextPosition < BAR_MIN || nextPosition > CALC_MAX) continue;
 
       const nextRecent = [...state.recent, move].slice(-3);
       const key = stateKey(nextPosition, nextRecent);
@@ -198,50 +261,38 @@ function findShortestPath(current, target, rules) {
   return null;
 }
 
-function renderResult(path, current, target, rules) {
+function renderResult(path, current, target) {
   sequenceEl.replaceChildren();
   updateMarkers();
 
   if (!path) {
     resultTitleEl.textContent = "手順なし";
     stepCountEl.textContent = "0 手";
-    messageEl.textContent = "0..150 の範囲を外れずに到達できる手順が見つかりませんでした。現在値、目標値、ルールを確認してください。";
     return;
   }
 
-  let position = current;
-
-  // 連続する同じ操作をまとめる
-  const grouped = [];
-  for (const move of path) {
-    position += move.delta;
-    const last = grouped[grouped.length - 1];
-    if (last && last.move.id === move.id) {
-      last.count += 1;
-      last.finalPosition = position;
-    } else {
-      grouped.push({ move, count: 1, finalPosition: position });
-    }
-  }
-
-  // 表示を生成
-  let displayPosition = current;
-  grouped.forEach(({ move, count }) => {
+  path.forEach((move, index) => {
     const item = document.createElement("li");
     item.className = move.delta > 0 ? "positive" : "negative";
-    const sign = move.delta > 0 ? "+" : "";
-    const imgSrc = `images/${sign}${move.delta}.png`;
-    const label = count > 1 ? `${move.label} ×${count}` : move.label;
-    const deltaText = count > 1 ? `${formatDelta(move.delta)} ×${count} = ${formatDelta(move.delta * count)}` : formatDelta(move.delta);
-    item.innerHTML = `<span><img src="${imgSrc}" alt="${move.label}" class="step-image"> ${label}</span><span class="delta">${deltaText}</span>`;
+    item.title = `${index + 1}. ${move.label} (${formatDelta(move.delta)})`;
+    item.setAttribute("aria-label", `${index + 1}. ${move.label} ${formatDelta(move.delta)}`);
+
+    const image = document.createElement("img");
+    image.src = imageSrcForMove(move);
+    image.alt = "";
+    image.className = "step-image";
+    image.draggable = false;
+
+    const delta = document.createElement("span");
+    delta.className = "step-delta";
+    delta.textContent = formatDelta(move.delta);
+
+    item.append(image, delta);
     sequenceEl.append(item);
   });
 
   resultTitleEl.textContent = `${current} から ${target} へ`;
   stepCountEl.textContent = `${path.length} 手`;
-  messageEl.textContent = rules.length
-    ? "上部スロットに指定した最後の操作条件を満たす最短手順です。"
-    : "ルール指定なしの最短手順です。";
 }
 
 function calculate() {
@@ -252,13 +303,11 @@ function calculate() {
 
   const rules = readRules();
   const path = findShortestPath(current, target, rules);
-  renderResult(path, current, target, rules);
+  renderResult(path, current, target);
 }
 
 document.querySelector("#clear-rules").addEventListener("click", () => {
-  rulesEl.querySelectorAll(".rule-type").forEach((select) => {
-    select.value = "";
-  });
+  rulesEl.querySelectorAll(".rule-row").forEach(clearRuleMove);
   calculate();
 });
 
@@ -271,7 +320,27 @@ form.addEventListener("submit", (event) => {
   input.addEventListener("input", calculate);
 });
 
-rulesEl.addEventListener("change", calculate);
+rulesEl.addEventListener("click", (event) => {
+  if (!(event.target instanceof Element)) return;
+  const row = event.target.closest(".rule-row");
+  if (!row) return;
+  setActiveRuleRow(row);
+});
+
+rulesEl.addEventListener("dblclick", (event) => {
+  if (!(event.target instanceof Element)) return;
+  const row = event.target.closest(".rule-row");
+  if (!row) return;
+  clearRuleMove(row);
+  calculate();
+});
+
+document.addEventListener("click", (event) => {
+  if (!(event.target instanceof Element)) return;
+  const button = event.target.closest(".rule-palette-button");
+  if (!button) return;
+  setRuleMove(activeRuleRow || rulesEl.querySelector(".rule-row"), button.dataset.moveId);
+});
 
 currentMarker.addEventListener("pointerdown", (event) => {
   event.stopPropagation();

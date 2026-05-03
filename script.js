@@ -15,6 +15,7 @@ const MOVES = [
 
 const RULE_ORDERS = ["last", "second_last", "third_last"];
 const RULE_LABELS = ["最後", "最後から2番目", "最後から3番目"];
+const PALETTE_MOVE_IDS = ["light_hit", "medium_hit", "punch", "bend", "heavy_hit", "draw", "upset", "shrink"];
 
 const form = document.querySelector("#calculator");
 const currentInput = document.querySelector("#current");
@@ -26,28 +27,40 @@ const stepCountEl = document.querySelector("#step-count");
 const currentMarker = document.querySelector("#current-marker");
 const targetMarker = document.querySelector("#target-marker");
 const rangeTrack = document.querySelector(".range-track");
+const rangeWrap = document.querySelector(".range-wrap");
 let activeRangeInput = null;
 let activeRuleRow = null;
+let barPixelStep = 3;
 
 function initRangeTrack() {
   const stops = [];
   const majorTicks = [];
 
   for (let value = BAR_MIN; value < BAR_MAX; value += 1) {
-    const start = (value / BAR_MAX) * 100;
-    const end = ((value + 1) / BAR_MAX) * 100;
+    const start = value * barPixelStep;
+    const end = (value + 1) * barPixelStep;
     const color = value % 10 === 0 ? "#2f2f2f" : value % 2 === 0 ? "#858585" : "#a9a9a9";
-    stops.push(`${color} ${start}% ${end}%`);
+    stops.push(`${color} ${start}px ${end}px`);
   }
 
   for (let value = 20; value < BAR_MAX; value += 20) {
-    const start = (value / BAR_MAX) * 100;
-    const end = ((value + 1) / BAR_MAX) * 100;
-    majorTicks.push(`linear-gradient(90deg, transparent ${start}%, #2f2f2f ${start}% ${end}%, transparent ${end}%)`);
+    const start = value * barPixelStep;
+    const end = (value + 1) * barPixelStep;
+    majorTicks.push(`linear-gradient(90deg, transparent ${start}px, #2f2f2f ${start}px ${end}px, transparent ${end}px)`);
   }
 
   rangeTrack.style.setProperty("--bar-stripes", `linear-gradient(90deg, ${stops.join(", ")})`);
   rangeTrack.style.setProperty("--major-ticks", majorTicks.join(", "));
+}
+
+function updateGaugeMetrics() {
+  const availableWidth = rangeWrap.parentElement.clientWidth;
+  const nextStep = Math.min(4, Math.max(1, Math.floor(availableWidth / BAR_MAX)));
+  barPixelStep = nextStep;
+  rangeWrap.style.setProperty("--bar-step", `${barPixelStep}px`);
+  rangeWrap.style.setProperty("--bar-width", `${BAR_MAX * barPixelStep}px`);
+  initRangeTrack();
+  updateMarkers();
 }
 
 function initRules() {
@@ -80,7 +93,7 @@ function createRulePalette() {
   palette.className = "rule-palette";
   palette.setAttribute("aria-label", "操作アイコン");
 
-  MOVES.forEach((move) => {
+  PALETTE_MOVE_IDS.map((moveId) => MOVES.find((move) => move.id === moveId)).forEach((move) => {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "rule-palette-button";
@@ -133,7 +146,7 @@ function setRuleMove(row, moveId) {
   value.textContent = formatDelta(move.delta);
 
   icon.append(image, value);
-  setActiveRuleRow(row.nextElementSibling || row);
+  setActiveRuleRow(row.nextElementSibling || rulesEl.querySelector(".rule-row"));
   calculate();
 }
 
@@ -156,8 +169,8 @@ function clampBarValue(value) {
 function updateMarkers() {
   const current = clampBarValue(currentInput.value);
   const target = clampBarValue(targetInput.value);
-  currentMarker.style.left = `${(Math.min(current, BAR_MAX - 1) / BAR_MAX) * 100}%`;
-  targetMarker.style.left = `${(Math.min(target, BAR_MAX - 1) / BAR_MAX) * 100}%`;
+  currentMarker.style.left = `${Math.min(current, BAR_MAX - 1) * barPixelStep}px`;
+  targetMarker.style.left = `${Math.min(target, BAR_MAX - 1) * barPixelStep}px`;
   currentMarker.setAttribute("aria-valuenow", current);
   targetMarker.setAttribute("aria-valuenow", target);
 }
@@ -394,6 +407,11 @@ rangeTrack.addEventListener("pointercancel", () => {
   });
 });
 
+if ("ResizeObserver" in window) {
+  new ResizeObserver(updateGaugeMetrics).observe(rangeWrap.parentElement);
+} else {
+  window.addEventListener("resize", updateGaugeMetrics);
+}
 initRules();
-initRangeTrack();
+updateGaugeMetrics();
 calculate();

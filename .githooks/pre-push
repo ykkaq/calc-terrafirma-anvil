@@ -1,0 +1,14 @@
+#!/bin/sh
+# Block direct pushes to main branch
+
+while read local_ref local_object remote_ref remote_object
+do
+  if [ "$remote_ref" = "refs/heads/main" ]; then
+    echo "ERROR: Direct push to 'main' branch is blocked."
+    echo "Please push to 'develop' branch instead."
+    echo "To force push (not recommended), use: git push --no-verify origin <branch>"
+    exit 1
+  fi
+done
+
+exit 0
